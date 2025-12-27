@@ -5,10 +5,10 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:workmanager/workmanager.dart';
 
 class BackgroundJob {
-  static final FlutterLocalNotificationsPlugin _notifications =
-      FlutterLocalNotificationsPlugin();
 
   // dispatcher is a traffic controller for background tasks
+  // ask compiler not the remove this code which it might as it might think it to be not useful
+  @pragma('vm:entry-point')
   static void callbackDispatcher() {
     // runs independently with its own memory
     Workmanager().executeTask((_, _) async {
@@ -18,9 +18,18 @@ class BackgroundJob {
 
   static Future<bool> processTransactionsFromLastDay() async {
     // print("executing background task...");
+    final FlutterLocalNotificationsPlugin notifications =
+      FlutterLocalNotificationsPlugin();
 
     // required as main won't run in background
     await Hive.initFlutter();
+
+    // Initialize notifications for this background isolate
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('launch_background');
+    const InitializationSettings initializationSettings =
+        InitializationSettings(android: initializationSettingsAndroid);
+    await notifications.initialize(initializationSettings);
 
     // prevent duplicate registration error
     if (!Hive.isAdapterRegistered(TransactionModelAdapter().typeId)) {
@@ -51,8 +60,8 @@ class BackgroundJob {
         icon: 'launch_background',
       ), // icon must
     );
-    await _notifications.cancel(1);
-    await _notifications.show(
+    await notifications.cancel(1);
+    await notifications.show(
       1,
       "Daily Wallet Log",
       "₹${totalSpent.toStringAsFixed(2)} spent, ₹${totalEarned.toStringAsFixed(2)} earned today",
