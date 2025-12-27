@@ -1,0 +1,64 @@
+import 'package:daily_wallet_log/models/transaction_model.dart';
+import 'package:daily_wallet_log/utility/utility.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:workmanager/workmanager.dart';
+
+class BackgroundJob {
+  static final FlutterLocalNotificationsPlugin _notifications =
+      FlutterLocalNotificationsPlugin();
+
+  // dispatcher is a traffic controller for background tasks
+  static void callbackDispatcher() {
+    // runs independently with its own memory
+    Workmanager().executeTask((_, _) async {
+      return await processTransactionsFromLastDay();
+    });
+  }
+
+  static Future<bool> processTransactionsFromLastDay() async {
+    // print("executing background task...");
+
+    // required as main won't run in background
+    await Hive.initFlutter();
+
+    // prevent duplicate registration error
+    if (!Hive.isAdapterRegistered(TransactionModelAdapter().typeId)) {
+      Hive.registerAdapter(TransactionModelAdapter());
+    }
+
+    var box = await Hive.openBox<TransactionModel>('transactions');
+
+    await box.clear();
+    await Utility.readBankSMS();
+
+    final today = DateTime.now();
+    final totalSpent = box.values
+        .where(
+          (t) => t.date.day == today.day && t.type == TransactionType.debit,
+        )
+        .fold(0.0, (sum, t) => sum + t.amount);
+    final totalEarned = box.values
+        .where(
+          (t) => t.date.day == today.day && t.type == TransactionType.credit,
+        )
+        .fold(0.0, (sum, t) => sum + t.amount);
+
+    const details = NotificationDetails(
+      android: AndroidNotificationDetails(
+        'daily',
+        'Daily Wallet Log',
+        icon: 'launch_background',
+      ), // icon must
+    );
+    await _notifications.cancel(1);
+    await _notifications.show(
+      1,
+      "Daily Wallet Log",
+      "₹${totalSpent.toStringAsFixed(2)} spent, ₹${totalEarned.toStringAsFixed(2)} earned today",
+      details,
+    );
+
+    return true;
+  }
+}

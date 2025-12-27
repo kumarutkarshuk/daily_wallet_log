@@ -18,7 +18,7 @@ class TransactionModelAdapter extends TypeAdapter<TransactionModel> {
     };
     return TransactionModel(
       fields[0] as double,
-      fields[1] as String,
+      fields[1] as int,
       fields[2] as DateTime,
       fields[3] as String,
     );
@@ -31,11 +31,11 @@ class TransactionModelAdapter extends TypeAdapter<TransactionModel> {
       ..writeByte(0)
       ..write(obj.amount)
       ..writeByte(1)
-      ..write(obj.type)
+      ..write(obj.typeIndex)
       ..writeByte(2)
       ..write(obj.date)
       ..writeByte(3)
-      ..write(obj.description);
+      ..write(obj.message);
   }
 
   @override

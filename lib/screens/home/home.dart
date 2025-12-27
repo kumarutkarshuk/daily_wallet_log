@@ -1,9 +1,7 @@
 import 'package:daily_wallet_log/models/transaction_model.dart';
+import 'package:daily_wallet_log/utility/utility.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:telephony/telephony.dart';
-
-final telephony = Telephony.instance;
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -18,49 +16,21 @@ class _Home extends State<Home> {
   @override
   void initState() {
     super.initState();
-    _readBankSMS();
+    Utility.readBankSMS();
+    
   }
 
-  Future<void> _readBankSMS() async {
-    bool? granted = await telephony.requestSmsPermissions;
-    if (granted ?? false) {
-      List<SmsMessage> messages = await telephony.getInboxSms();
-
-      for (var msg in messages) {
-        if (msg.body != null && msg.body!.toLowerCase().contains("debited")) {
-          final match = RegExp(r'Rs\.? ?(\d+\.?\d*)').firstMatch(msg.body!);
-          if (match != null) {
-            double amount = double.parse(match.group(1)!);
-            final alreadyExists = box.values.any((t) => t.description == msg.body);
-            if (!alreadyExists) {
-              box.add(TransactionModel(amount, "debit", DateTime.fromMillisecondsSinceEpoch(msg.date!), msg.body!));
-            }
-          }
-        }
-      }
-
-      setState(() {});
-    }
+  double _calcTotalAmount(List<TransactionModel> allTxns, TransactionType transactionType){
+    return allTxns
+        .where((t) => t.type == transactionType)
+        .fold(0.0, (sum, t) => sum + t.amount);
   }
-
-  // List<TransactionModel> _getTransactionsByRange(DateTime start, DateTime end) {
-  //   final box = Hive.box<TransactionModel>('transactions');
-  //   return box.values.where((t) => t.date.isAfter(start) && t.date.isBefore(end)).toList();
-  // }
-
-  // double _getTotal(List<TransactionModel> txns) =>
-  //     txns.fold(0.0, (sum, t) => sum + t.amount);
-
-  // final now = DateTime.now();
-  // final weekAgo = now.subtract(const Duration(days: 7));
-  // final weeklyTotal = getTotal(getTransactionsByRange(weekAgo, now));
 
   @override
   Widget build(BuildContext context) {
     final allTxns = box.values.toList();
-    final totalSpent = allTxns
-        .where((t) => t.type == "debit")
-        .fold(0.0, (sum, t) => sum + t.amount);
+    double totalSpent = _calcTotalAmount(allTxns, TransactionType.debit);
+    double totalEarned = _calcTotalAmount(allTxns, TransactionType.credit);
 
     return Scaffold(
       appBar: AppBar(
@@ -68,8 +38,14 @@ class _Home extends State<Home> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: _readBankSMS,
-          )
+            onPressed: () async {
+              await Utility.readBankSMS();
+              setState(() {
+                totalSpent = _calcTotalAmount(allTxns, TransactionType.debit);
+                totalEarned = _calcTotalAmount(allTxns, TransactionType.credit);
+              });
+            },
+          ),
         ],
       ),
       body: Column(
@@ -79,7 +55,16 @@ class _Home extends State<Home> {
             color: Colors.blue.shade100,
             width: double.infinity,
             child: Text(
-              "Total Spent: ₹${totalSpent.toStringAsFixed(2)}",
+              "Amount Spent: ₹${totalSpent.toStringAsFixed(2)}",
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.all(16),
+            color: Colors.blue.shade100,
+            width: double.infinity,
+            child: Text(
+              "Amount Earned: ₹${totalEarned.toStringAsFixed(2)}",
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ),
@@ -97,10 +82,10 @@ class _Home extends State<Home> {
                   itemBuilder: (context, i) {
                     final t = txns[i];
                     return ListTile(
-                      title: Text("₹${t.amount} ${t.type}"),
-                      subtitle: Text(t.description),
+                      title: Text("₹${t.amount} (${t.type.name})"),
+                      subtitle: Text(t.message),
                       trailing: Text(
-                        "${t.date.day}/${t.date.month}",
+                        "${t.date.day}/${t.date.month}/${t.date.year}",
                         style: const TextStyle(fontSize: 12),
                       ),
                     );

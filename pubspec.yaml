@@ -34,17 +34,24 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
-  telephony: ^0.2.0        # for reading SMS (Android only)
-  hive: ^2.2.3             # local key-value DB
+  
+  another_telephony: ^0.4.1 # for reading SMS (Android only)
+  # unnecessary currently
+  hive: ^2.2.3 # local key-value DB
   hive_flutter: ^1.1.0
   flutter_local_notifications: ^17.0.0
-  workmanager: ^0.5.1      # background tasks
-  build_runner: ^2.4.6
-  hive_generator: ^2.0.1
+  workmanager: # background tasks
+    git:
+      url: https://github.com/fluttercommunity/flutter_workmanager.git
+      path: workmanager
+      ref: main
+  permission_handler: ^12.0.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  build_runner: ^2.4.6 # for code generation
+  hive_generator: ^2.0.1 # for code generation
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
