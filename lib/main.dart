@@ -18,7 +18,7 @@ void main() async {
   await Utility.askNotificationsPermission();
 
   // android's limitation of min 15 mins for scheduled tasks
-  await Workmanager().initialize(BackgroundJob.callbackDispatcher);
+  await Workmanager().initialize(callbackDispatcher);
   await Workmanager().registerPeriodicTask("1", "dailyTask",
       frequency: const Duration(minutes: 15), existingWorkPolicy: ExistingPeriodicWorkPolicy.replace);
 

@@ -4,22 +4,22 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:workmanager/workmanager.dart';
 
+// dispatcher is a traffic controller for background tasks
+// ask compiler not the remove this code which it might as it might think it to be not useful
+// must be outside a class
+@pragma('vm:entry-point')
+void callbackDispatcher() {
+  // runs independently with its own memory
+  Workmanager().executeTask((_, _) async {
+    return await BackgroundJob.processTransactionsFromLastDay();
+  });
+}
+
 class BackgroundJob {
-
-  // dispatcher is a traffic controller for background tasks
-  // ask compiler not the remove this code which it might as it might think it to be not useful
-  @pragma('vm:entry-point')
-  static void callbackDispatcher() {
-    // runs independently with its own memory
-    Workmanager().executeTask((_, _) async {
-      return await processTransactionsFromLastDay();
-    });
-  }
-
   static Future<bool> processTransactionsFromLastDay() async {
     // print("executing background task...");
     final FlutterLocalNotificationsPlugin notifications =
-      FlutterLocalNotificationsPlugin();
+        FlutterLocalNotificationsPlugin();
 
     // required as main won't run in background
     await Hive.initFlutter();
