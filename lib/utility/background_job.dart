@@ -41,6 +41,8 @@ class BackgroundJob {
     await box.clear();
     await Utility.readBankSMS();
 
+    // print("box values length: ${box.values.length}");
+
     final today = DateTime.now();
     final totalSpent = box.values
         .where(
@@ -66,6 +68,12 @@ class BackgroundJob {
       "Daily Wallet Log",
       "₹${totalSpent.toStringAsFixed(2)} spent, ₹${totalEarned.toStringAsFixed(2)} earned today",
       details,
+    );
+
+    await Workmanager().registerOneOffTask(
+      "dailyTask",
+      "dailyTask",
+      initialDelay: const Duration(days: 1),
     );
 
     return true;

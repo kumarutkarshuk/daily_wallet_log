@@ -31,7 +31,9 @@ class Utility {
               box.add(
                 TransactionModel(
                   amount,
-                  msg.body!.toLowerCase().startsWith("credit") ? TransactionType.credit.index : TransactionType.debit.index,
+                  msg.body!.toLowerCase().startsWith("credit")
+                      ? TransactionType.credit.index
+                      : TransactionType.debit.index,
                   DateTime.fromMillisecondsSinceEpoch(msg.date!),
                   msg.body!,
                 ),
@@ -47,5 +49,16 @@ class Utility {
     if (await Permission.notification.isDenied) {
       await Permission.notification.request();
     }
+  }
+
+  static Duration delayUntil(int hour, int minute) {
+    final now = DateTime.now();
+    var target = DateTime(now.year, now.month, now.day, hour, minute);
+
+    if (target.isBefore(now)) {
+      target = target.add(const Duration(days: 1));
+    }
+
+    return target.difference(now);
   }
 }

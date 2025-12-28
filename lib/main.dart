@@ -19,9 +19,12 @@ void main() async {
 
   // android's limitation of min 15 mins for scheduled tasks
   await Workmanager().initialize(callbackDispatcher);
-  await Workmanager().registerPeriodicTask("1", "dailyTask",
-      frequency: const Duration(minutes: 15), existingWorkPolicy: ExistingPeriodicWorkPolicy.replace);
-
+  await Workmanager().registerOneOffTask(
+    "dailyTask",
+    "dailyTask",
+    existingWorkPolicy: ExistingWorkPolicy.replace,
+    initialDelay: Utility.delayUntil(22, 0),
+  );
   // testing
   // Timer.periodic(const Duration(seconds: 10), (timer) {
   //   BackgroundJob.processTransactionsFromLastDay();
