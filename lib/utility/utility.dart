@@ -10,14 +10,14 @@ class Utility {
 
     bool? granted = await telephony.requestSmsPermissions;
     if (granted ?? false) {
-      // from last 24 hours
+      // today
+      final now = DateTime.now();
+      final startOfToday = DateTime(now.year, now.month, now.day);
+
       List<SmsMessage> messages = await telephony.getInboxSms(
-        filter: SmsFilter.where(SmsColumn.DATE).greaterThan(
-          DateTime.now()
-              .subtract(Duration(hours: 24))
-              .millisecondsSinceEpoch
-              .toString(),
-        ),
+        filter: SmsFilter.where(
+          SmsColumn.DATE,
+        ).greaterThan(startOfToday.millisecondsSinceEpoch.toString()),
       );
 
       // matching algo

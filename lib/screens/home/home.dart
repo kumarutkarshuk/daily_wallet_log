@@ -17,10 +17,12 @@ class _Home extends State<Home> {
   void initState() {
     super.initState();
     Utility.readBankSMS();
-    
   }
 
-  double _calcTotalAmount(List<TransactionModel> allTxns, TransactionType transactionType){
+  double _calcTotalAmount(
+    List<TransactionModel> allTxns,
+    TransactionType transactionType,
+  ) {
     return allTxns
         .where((t) => t.type == transactionType)
         .fold(0.0, (sum, t) => sum + t.amount);
@@ -28,10 +30,6 @@ class _Home extends State<Home> {
 
   @override
   Widget build(BuildContext context) {
-    final allTxns = box.values.toList();
-    double totalSpent = _calcTotalAmount(allTxns, TransactionType.debit);
-    double totalEarned = _calcTotalAmount(allTxns, TransactionType.credit);
-
     return Scaffold(
       appBar: AppBar(
         title: const Text("Daily Wallet Log"),
@@ -40,61 +38,67 @@ class _Home extends State<Home> {
             icon: const Icon(Icons.refresh),
             onPressed: () async {
               await Utility.readBankSMS();
-              setState(() {
-                totalSpent = _calcTotalAmount(allTxns, TransactionType.debit);
-                totalEarned = _calcTotalAmount(allTxns, TransactionType.credit);
-              });
             },
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            color: Colors.blue.shade100,
-            width: double.infinity,
-            child: Text(
-              "Amount Spent: ₹${totalSpent.toStringAsFixed(2)}",
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.all(16),
-            color: Colors.blue.shade100,
-            width: double.infinity,
-            child: Text(
-              "Amount Earned: ₹${totalEarned.toStringAsFixed(2)}",
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-          ),
-          Expanded(
-            // for listening to Hive DB changes
-            child: ValueListenableBuilder(
-              valueListenable: box.listenable(),
-              builder: (context, Box<TransactionModel> box, _) {
-                final txns = box.values.toList().reversed.toList();
-                if (txns.isEmpty) {
-                  return const Center(child: Text("No transactions found"));
-                }
-                return ListView.builder(
-                  itemCount: txns.length,
-                  itemBuilder: (context, i) {
-                    final t = txns[i];
-                    return ListTile(
-                      title: Text("₹${t.amount} (${t.type.name})"),
-                      subtitle: Text(t.message),
-                      trailing: Text(
-                        "${t.date.day}/${t.date.month}/${t.date.year}",
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-        ],
+      body: ValueListenableBuilder(
+        valueListenable: box.listenable(),
+        builder: (context, Box<TransactionModel> box, _) {
+          final txns = box.values.toList().reversed.toList();
+          double totalSpent = _calcTotalAmount(txns, TransactionType.debit);
+          double totalEarned = _calcTotalAmount(txns, TransactionType.credit);
+
+          return Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                color: Colors.blue.shade100,
+                width: double.infinity,
+                child: Text(
+                  "Amount Spent: ₹${totalSpent.toStringAsFixed(2)}",
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.all(16),
+                margin: EdgeInsets.only(bottom: 10),
+                color: Colors.blue.shade100,
+                width: double.infinity,
+                child: Text(
+                  "Amount Earned: ₹${totalEarned.toStringAsFixed(2)}",
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              if (txns.isEmpty)
+                const Center(child: Text("No transactions found."))
+              else
+                Expanded(
+                  // for listening to Hive DB changes
+                  child: ListView.builder(
+                    itemCount: txns.length,
+                    itemBuilder: (context, i) {
+                      final t = txns[i];
+                      return ListTile(
+                        title: Text("₹${t.amount} (${t.type.name})"),
+                        subtitle: Text(t.message),
+                        trailing: Text(
+                          "${t.date.day}/${t.date.month}/${t.date.year}",
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+            ],
+          );
+        },
       ),
     );
   }

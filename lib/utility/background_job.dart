@@ -73,6 +73,7 @@ class BackgroundJob {
     await Workmanager().registerOneOffTask(
       "dailyTask",
       "dailyTask",
+      existingWorkPolicy: ExistingWorkPolicy.replace,
       initialDelay: const Duration(days: 1),
     );
 
